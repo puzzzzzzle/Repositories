@@ -1,3 +1,15 @@
+[DEFAULT]
+# gc
+git_gc = git gc "$@"
+# job num
+jobs = 8
+# test cmd
+git_fileLs = ls
+
+# git submodule operators
+git_subInit = git submodule update --init --recursive
+git_subClean = git submodule foreach --recursive "git reset --hard HEAD && git clean -fd"
+git_subBranch = git submodule foreach --recursive "git checkout $@"
 
 [GoStudy]
 checkout = git clone 'git@github.com:puzzzzzzle/GoStudy.git' 'GoStudy'
@@ -12,7 +24,7 @@ checkout = git clone 'git@github.com:puzzzzzzle/JavaToolsStudy.git' 'JavaToolsSt
 checkout = git clone 'git@github.com:puzzzzzzle/blog_code.git' 'blog_code'
 
 [cpp_study]
-checkout = git clone 'git@github.com:puzzzzzzle/cpp_study.git' 'cpp_study'
+checkout = git clone --recursive 'git@github.com:puzzzzzzle/cpp_study.git' 'cpp_study'
 
 [python_study]
 checkout = git clone 'git@github.com:puzzzzzzle/python_study.git' 'python_study'
