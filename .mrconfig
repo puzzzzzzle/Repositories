@@ -16,22 +16,22 @@ git_subRCmd = git submodule foreach --recursive "$@"
 # change git local config for user and email
 # eg: mr user puzzzzzzle 2359173906@qq.com
 git_user = echo "$@" 
-    git config user.name "$1"
-    git config user.email "$2"
-    echo name:
-    git config user.name
-    echo email:
-    git config user.email
+	   git config user.name "$1"
+	   git config user.email "$2"
+	   echo name:
+	   git config user.name
+	   echo email:
+	   git config user.email
 # change git local config for user and email, include all submodule
 # eg: mr ruser puzzzzzzle 2359173906@qq.com
 git_ruser = echo "$@" 
-    git config user.name "$1"
-    git config user.email "$2"
-    echo name:
-    git config user.name
-    echo email:
-    git config user.email
-    git submodule foreach --recursive "echo $@ && git config user.name $1 && git config user.email $2"
+	   git config user.name "$1"
+	   git config user.email "$2"
+	   echo name:
+	   git config user.name
+	   echo email:
+	   git config user.email
+	   git submodule foreach --recursive "echo $@ && git config user.name $1 && git config user.email $2"
 
 [GoStudy]
 checkout = git clone 'git@github.com:puzzzzzzle/GoStudy.git' 'GoStudy'
@@ -56,3 +56,6 @@ checkout = git clone 'git@github.com:puzzzzzzle/rust_study.git' 'rust_study'
 
 [spring-cloud-study]
 checkout = git clone 'git@github.com:puzzzzzzle/spring-cloud-study.git' 'spring-cloud-study'
+
+[/Users/khalidzhang/Study]
+checkout = git clone 'git@github.com:puzzzzzzle/Repositories.git' 'Study'

@@ -8,3 +8,6 @@
 2. mr up
 3. mr status
 4. 
+
+## 批量注册
+1. `ls |xargs -I {} sh -c  'cd {} && pwd && mr reg  && cd -'`
