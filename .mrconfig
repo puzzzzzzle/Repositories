@@ -1,0 +1,24 @@
+
+[GoStudy]
+checkout = git clone 'https://github.com/puzzzzzzle/GoStudy.git' 'GoStudy'
+
+[JavaStudy]
+checkout = git clone 'https://github.com/puzzzzzzle/JavaStudy.git' 'JavaStudy'
+
+[JavaToolsStudy]
+checkout = git clone 'https://github.com/puzzzzzzle/JavaToolsStudy.git' 'JavaToolsStudy'
+
+[blog_code]
+checkout = git clone 'https://github.com/puzzzzzzle/blog_code.git' 'blog_code'
+
+[cpp_study]
+checkout = git clone 'https://github.com/puzzzzzzle/cpp_study.git' 'cpp_study'
+
+[python_study]
+checkout = git clone 'https://github.com/puzzzzzzle/python_study.git' 'python_study'
+
+[rust_study]
+checkout = git clone 'https://github.com/puzzzzzzle/rust_study.git' 'rust_study'
+
+[spring-cloud-study]
+checkout = git clone 'https://github.com/puzzzzzzle/spring-cloud-study.git' 'spring-cloud-study'
