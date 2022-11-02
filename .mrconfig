@@ -12,6 +12,7 @@ git_subClean = git submodule foreach --recursive "git reset --hard HEAD && git c
 git_subBranch = git submodule foreach --recursive "git checkout $@"
 git_subUpdate = git submodule foreach --recursive "git pull"
 git_subRCmd = git submodule foreach --recursive "$@"
+git_subCmd = git submodule foreach "$@"
 
 # change git local config for user and email
 # eg: mr user puzzzzzzle 2359173906@qq.com
