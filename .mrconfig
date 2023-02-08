@@ -29,7 +29,6 @@ git_ruser = echo "$@"
 	   git config user.email "$2"
 	   echo name:
 	   git config user.name
-
 	   echo email:
 	   git config user.email
 	   git submodule foreach --recursive "echo $@ && git config user.name $1 && git config user.email $2"
