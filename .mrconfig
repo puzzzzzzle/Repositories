@@ -59,7 +59,7 @@ checkout = git clone 'git@github.com:puzzzzzzle/rust_study.git' 'rust_study'
 checkout = git clone 'git@github.com:puzzzzzzle/spring-cloud-study.git' 'spring-cloud-study'
 
 [lua_study]
-checkout = git clone 'git@github.com/puzzzzzzle/lua_study.git' 'lua_study'
+checkout = git clone 'git@github.com:puzzzzzzle/lua_study.git' 'lua_study'
 
 [openai_study]
-checkout = git clone 'git@github.com/puzzzzzzle/openai_study.git' 'openai_study'
+checkout = git clone 'git@github.com:puzzzzzzle/openai_study.git' 'openai_study'
