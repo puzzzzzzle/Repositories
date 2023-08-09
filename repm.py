@@ -6,6 +6,7 @@ import functools
 import os
 import pathlib
 import re
+import subprocess
 
 # ---------- logger ----------
 logging.basicConfig(level=logging.DEBUG,
@@ -288,8 +289,35 @@ class GitCloneCmd(CmdBase):
 
         remote_path = self.value("remote")
 
-        cmd = f"cd {self.base_path} && git clone {recursive_str} '{remote_path}' '{local_path}' "
+        cmd = f'cd {self.base_path} && git clone {recursive_str} "{remote_path}" "{local_path}" '
         logger.debug(f"will run -- {cmd} --")
+        execute_cmd(cmd)
+        pass
+
+
+def run_git_cmd(cmd_obj, cmd_str):
+    local_path = cmd_obj.value("local")
+    curr_path = cmd_obj.base_path / local_path
+    if not (curr_path).exists():
+        logger.info(f"project not cloned, ignore {cmd_obj.curr_name} {local_path}")
+        return
+    cmd = f'cd "{curr_path}" && {cmd_str}'
+    logger.debug(f"will run -- {cmd} --")
+    execute_cmd(cmd)
+
+
+def execute_cmd(cmd: str):
+    # subprocess.run([x for x in cmd.split(" ")])
+    os.system(cmd)
+
+
+class GitAnyCmd(CmdBase):
+    cmd = "cmd"
+    description = "run any cmd in each resp"
+    help = description
+
+    def run(self, cmd: str):
+        run_git_cmd(self, cmd)
         pass
 
 
@@ -299,13 +327,7 @@ class GitUpdateCmd(CmdBase):
     help = description
 
     def run(self):
-        local_path = self.value("local")
-        curr_path = self.base_path / local_path
-        if not (curr_path).exists():
-            logger.info(f"project not cloned, ignore {self.curr_name} {local_path}")
-            return
-        cmd = f"cd {curr_path} && git pull"
-        logger.debug(f"will run -- {cmd} --")
+        run_git_cmd(self, "git pull")
         pass
 
 
