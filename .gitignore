@@ -2,5 +2,5 @@
 !.gitignore
 !.mrconfig
 !README.md
-!rep_mng.py
+!repm.py
 !Repositories.ini
