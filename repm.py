@@ -230,18 +230,25 @@ class CmdBase:
     def __init__(self, global_conf, curr_conf, base_path, curr_name):
         self.global_conf = global_conf
         self.curr_conf = curr_conf
-        self.base_path = base_path
+        self.base_path: pathlib.Path = base_path
         self.curr_name = curr_name
 
         self.logger = logging.getLogger(f"{self.__class__.__name__}_{curr_name}")
         pass
 
-    def get_value(self, key: str, default=None):
+    def value_or_default(self, key: str, default=None) -> str:
         if key in self.curr_conf:
             return self.curr_conf[key]
         if key in self.global_conf:
             return self.global_conf[key]
-        return None
+        return default
+
+    def value(self, key: str) -> str:
+        if key in self.curr_conf:
+            return self.curr_conf[key]
+        if key in self.global_conf:
+            return self.global_conf[key]
+        raise KeyError(f"key {key} not exists")
 
     def run(self, *args, **kwargs):
         pass
@@ -265,10 +272,40 @@ class TestCmd(CmdBase):
 
 class GitCloneCmd(CmdBase):
     cmd = "clone"
-    description = "clone all repositories in config"
+    description = "clone repositories in config"
     help = description
 
     def run(self):
+        local_path = self.value("local")
+        if (self.base_path / local_path).exists():
+            logger.info(f"ignore exists {self.curr_name} {local_path}")
+            return
+        recursive = self.value_or_default("recursive", "true")
+        if recursive.strip(' ').upper() == 'TRUE':
+            recursive_str = " --recursive "
+        else:
+            recursive_str = ""
+
+        remote_path = self.value("remote")
+
+        cmd = f"cd {self.base_path} && git clone {recursive_str} '{remote_path}' '{local_path}' "
+        logger.debug(f"will run -- {cmd} --")
+        pass
+
+
+class GitUpdateCmd(CmdBase):
+    cmd = "update"
+    description = "update repositories in config"
+    help = description
+
+    def run(self):
+        local_path = self.value("local")
+        curr_path = self.base_path / local_path
+        if not (curr_path).exists():
+            logger.info(f"project not cloned, ignore {self.curr_name} {local_path}")
+            return
+        cmd = f"cd {curr_path} && git pull"
+        logger.debug(f"will run -- {cmd} --")
         pass
 
 
