@@ -397,7 +397,7 @@ class TestCmd(CmdBase):
         :param arg1  : arg1 desc str
         :param arg4  : arg4 desc str
         """
-        self.log.debug(f"{arg1} {arg2} {arg3} {arg4} {arg5}")
+        self.log.info(f"{arg1} {arg2} {arg3} {arg4} {arg5}")
         return 0, [], [], ""
         pass
 
@@ -410,8 +410,8 @@ class GitCloneCmd(CmdBase):
     def run(self):
         local_path = self.value("local")
         if (self.base_path / local_path).exists():
-            self.log.info(f"ignore exists {self.curr_name} {local_path}")
-            return
+            self.log.debug(f"ignore exists {self.curr_name} {local_path}")
+            return 0, [], [], "ignore exists"
         recursive = self.value_or_default("recursive", "true")
         if recursive.strip(' ').upper() == 'TRUE':
             recursive_str = " --recursive "
