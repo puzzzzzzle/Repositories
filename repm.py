@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import configparser
 import argparse
 import inspect
@@ -25,7 +26,7 @@ def get_param_description(function, para_name):
         return ""
 
     # regex for para
-    pattern = rf":{para_name}\s*:\s*(.+)\s*"
+    pattern = rf":param\s*{para_name}\s*:\s*(.+)\s*"
     regex = re.compile(pattern, re.MULTILINE)
     match = regex.search(docstring)
 
@@ -66,7 +67,7 @@ def build_args(sub_cmds, cls):
             default_args[arg] = default
         else:
             normal_args.append(arg)
-    # add normal requires args
+    # add positional requires args
     cls.normal_args = normal_args
     cls.default_args = default_args
     cls.annotations = annotations
@@ -87,16 +88,33 @@ def build_args(sub_cmds, cls):
     # add default args
     if len(default_args) > 0:
         for arg, value in default_args.items():
-            help_str = f"{get_param_description(run_func, arg)}, default={default_args[arg]}"
             if arg in annotations:
                 t = annotations[arg]
             elif value is not None:
                 t = type(value)
             else:
                 t = str
+            name = f"--{arg}"
+            if len(arg) == 1:
+                name = f"-{arg}"
+            paras = {"type": t, "default": value}
+            if t == bool:
+                del paras["type"]
+                help_str = f"{get_param_description(run_func, arg)}"
+                if value:
+                    help_str += f", default is set, add flags to set false"
+                    paras["action"] = "store_false"
+                else:
+                    help_str += f", default is not set, add flags to set true"
+                    paras["action"] = "store_true"
 
-            parser.add_argument(f"--{arg}", type=t, default=value,
-                                help=help_str)
+                paras["help"] = help_str
+            else:
+                help_str = f"{get_param_description(run_func, arg)}"
+                paras["help"] = help_str
+
+            parser.add_argument(name, **paras)
+
     parser.set_defaults(func=functools.partial(run_cmd, cls))
     pass
 
@@ -234,8 +252,11 @@ class CmdBase:
         self.base_path: pathlib.Path = base_path
         self.curr_name = curr_name
 
-        self.logger = logging.getLogger(f"{self.__class__.__name__}_{curr_name}")
+        self.logger = logging.getLogger(self.log_tag())
         pass
+
+    def log_tag(self):
+        return f"{self.__class__.__name__}:{self.curr_name}"
 
     def value_or_default(self, key: str, default=None) -> str:
         if key in self.curr_conf:
@@ -264,8 +285,8 @@ class TestCmd(CmdBase):
 
     def run(self, arg1: int, arg2, arg3=1, arg4=2, arg5: int = None):
         """
-        :arg1  : arg1 desc str
-        :arg4  : arg4 desc str
+        :param arg1  : arg1 desc str
+        :param arg4  : arg4 desc str
         """
         self.logger.debug(f"{arg1} {arg2} {arg3} {arg4} {arg5}")
         pass
@@ -291,11 +312,11 @@ class GitCloneCmd(CmdBase):
 
         cmd = f'cd {self.base_path} && git clone {recursive_str} "{remote_path}" "{local_path}" '
         logger.debug(f"will run -- {cmd} --")
-        execute_cmd(cmd)
+        execute_cmd(cmd, self.log_tag())
         pass
 
 
-def run_git_cmd(cmd_obj, cmd_str):
+def run_cmd_in_repository_dir(cmd_obj, cmd_str):
     local_path = cmd_obj.value("local")
     curr_path = cmd_obj.base_path / local_path
     if not (curr_path).exists():
@@ -303,21 +324,50 @@ def run_git_cmd(cmd_obj, cmd_str):
         return
     cmd = f'cd "{curr_path}" && {cmd_str}'
     logger.debug(f"will run -- {cmd} --")
-    execute_cmd(cmd)
+    execute_cmd(cmd, cmd_obj.log_tag())
 
 
-def execute_cmd(cmd: str):
-    # subprocess.run([x for x in cmd.split(" ")])
-    os.system(cmd)
+def execute_cmd(cmd: str, log_tag=""):
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True,
+        text=True,
+        bufsize=1
+    )
+    log = logging.getLogger(log_tag)
+    while process.poll() is None:
+        # 从stdout输出读取内容
+        stdout_line = process.stdout.readline().strip()
+        if stdout_line:
+            log.info(f"{stdout_line}")
+
+        # 从stderr输出读取内容
+        stderr_line = process.stderr.readline().strip()
+        if stderr_line:
+            log.error(f"{stderr_line}")
+
+    # 读取任何剩余的输出
+    remaining_stdout, remaining_stderr = process.communicate()
+
+    if remaining_stdout.strip():
+        log.info(f"{remaining_stdout.strip()}")
+    if remaining_stderr.strip():
+        log.error(f"{remaining_stderr.strip()}")
+    return process.wait()
 
 
 class GitAnyCmd(CmdBase):
     cmd = "cmd"
-    description = "run any cmd in each resp"
+    description = "run any cmd in each repository's dir"
     help = description
 
     def run(self, cmd: str):
-        run_git_cmd(self, cmd)
+        """
+        :param cmd : any
+        """
+        run_cmd_in_repository_dir(self, cmd)
         pass
 
 
@@ -326,8 +376,49 @@ class GitUpdateCmd(CmdBase):
     description = "update repositories in config"
     help = description
 
-    def run(self):
-        run_git_cmd(self, "git pull")
+    def run(self, ignore_sub: bool = False):
+        """
+        :param ignore_sub : ignore update sub module
+        """
+        recursive_str = " --recurse-submodules"
+        if ignore_sub:
+            recursive_str = ""
+        run_cmd_in_repository_dir(self, f'git pull {recursive_str}')
+        pass
+
+
+class GitUpdateCmd(CmdBase):
+    cmd = "checkout"
+    description = "recursive update repositories in config"
+    help = description
+
+    def run(self, branch: str, r: bool = False):
+        """
+        :param branch : specified branch
+        :param r : recurse submodule
+        """
+        #  git -c credential.helper= pull --recurse-submodules --progress origin better_game
+        cmd = f'git checkout {branch} && git pull '
+        if r:
+            cmd += f' && git submodule foreach "git checkout {branch} && git pull"'
+        run_cmd_in_repository_dir(self, cmd)
+        pass
+
+
+class GitUpdateCmd(CmdBase):
+    cmd = "status"
+    description = "recursive update repositories in config"
+    help = description
+
+    def run(self, r: bool = False):
+        """
+        :param r : recurse submodule
+        """
+        #  git -c credential.helper= pull --recurse-submodules --progress origin better_game
+        cmd = f'git status'
+        if r:
+            cmd += f' && git submodule foreach "git status"'
+        run_cmd_in_repository_dir(self, cmd)
         pass
 
 
