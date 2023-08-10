@@ -228,13 +228,84 @@ def create_and_run_cmd(cls, *args, **kwargs):
             need_exec.append(item)
         else:
             logger.debug(f"ignore {local_path}")
-    logger.info(f"will exec : {need_exec}")
 
     # execute
     global_conf = conf["__Global__"]
     for item in need_exec:
-        cls(global_conf, conf[item], base_path, item).run(*args, **kwargs)
-    pass
+        cmd = cls(global_conf, conf[item], base_path, item)
+        log = cmd.logger
+        log.info(f"will exec : {need_exec}")
+        ret, info, err, cmd = cmd.run(*args, **kwargs)
+        success = ret == 0
+        header = "\n>>>>>>>>>>\n"
+        if success:
+            header += f"run success at {item}:"
+        else:
+            header += f"run fail at {item}:"
+        body = ""
+        if True or not success:
+            body += f'\ncmd:{cmd}\n'
+            body += "info:\n"
+            for line in info:
+                body += line
+        if len(err) > 0:
+            body += "err:\n"
+            for line in err:
+                body += line
+        body += "\n<<<<<<<<<<\n"
+
+        if success:
+            log.info(header + body)
+        else:
+            log.error(header + body)
+
+
+def run_cmd_in_repository_dir(cmd_obj, cmd_str):
+    local_path = cmd_obj.value("local")
+    curr_path = cmd_obj.base_path / local_path
+    if not (curr_path).exists():
+        logger.info(f"project not cloned, ignore {cmd_obj.curr_name} {local_path}")
+        return
+    cmd = f'cd "{curr_path}" && {cmd_str}'
+    logger.debug(f"will run -- {cmd} --")
+    return execute_cmd(cmd, cmd_obj.logger)
+
+
+def execute_cmd(cmd: str, log):
+    log.info(f" start run ")
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True,
+        text=True,
+        bufsize=1
+    )
+    stdout_lines = []
+    stderr_lines = []
+    while process.poll() is None:
+        # 从stdout输出读取内容
+        stdout_line = process.stdout.readline().strip()
+        if stdout_line:
+            log.info(f"{stdout_line}")
+            stdout_lines.append(stdout_line)
+        # 从stderr输出读取内容
+        stderr_line = process.stderr.readline().strip()
+        if stderr_line:
+            log.error(f"{stderr_line}")
+            stderr_lines.append(stdout_line)
+
+    # 读取任何剩余的输出
+    remaining_stdout, remaining_stderr = process.communicate()
+
+    if remaining_stdout.strip():
+        log.info(f"{remaining_stdout.strip()}")
+        stdout_lines.append(remaining_stdout)
+    if remaining_stderr.strip():
+        log.error(f"{remaining_stderr.strip()}")
+        stderr_lines.append(remaining_stdout)
+    log.info(f" end run ")
+    return process.wait(), stdout_lines, stderr_lines, cmd
 
 
 class CmdBase:
@@ -252,11 +323,14 @@ class CmdBase:
         self.base_path: pathlib.Path = base_path
         self.curr_name = curr_name
 
-        self.logger = logging.getLogger(self.log_tag())
+        self.logger = logging.getLogger(f"cmd/{self.__class__.__name__}/{self.curr_name}")
+        module_log_handler = logging.StreamHandler()
+        module_log_format = logging.Formatter("  %(name)s:  %(message)s")
+        module_log_handler.setFormatter(module_log_format)
+        self.logger.handlers.clear()
+        self.logger.addHandler(module_log_handler)
+        self.logger.setLevel(logging.DEBUG)
         pass
-
-    def log_tag(self):
-        return f"{self.__class__.__name__}:{self.curr_name}"
 
     def value_or_default(self, key: str, default=None) -> str:
         if key in self.curr_conf:
@@ -273,7 +347,7 @@ class CmdBase:
         raise KeyError(f"key {key} not exists")
 
     def run(self, *args, **kwargs):
-        pass
+        return 0, [], [], ""
 
 
 # ---------- repositories mng  ----------
@@ -289,6 +363,7 @@ class TestCmd(CmdBase):
         :param arg4  : arg4 desc str
         """
         self.logger.debug(f"{arg1} {arg2} {arg3} {arg4} {arg5}")
+        return 0, [], [], ""
         pass
 
 
@@ -312,50 +387,7 @@ class GitCloneCmd(CmdBase):
 
         cmd = f'cd {self.base_path} && git clone {recursive_str} "{remote_path}" "{local_path}" '
         logger.debug(f"will run -- {cmd} --")
-        execute_cmd(cmd, self.log_tag())
-        pass
-
-
-def run_cmd_in_repository_dir(cmd_obj, cmd_str):
-    local_path = cmd_obj.value("local")
-    curr_path = cmd_obj.base_path / local_path
-    if not (curr_path).exists():
-        logger.info(f"project not cloned, ignore {cmd_obj.curr_name} {local_path}")
-        return
-    cmd = f'cd "{curr_path}" && {cmd_str}'
-    logger.debug(f"will run -- {cmd} --")
-    execute_cmd(cmd, cmd_obj.log_tag())
-
-
-def execute_cmd(cmd: str, log_tag=""):
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        shell=True,
-        text=True,
-        bufsize=1
-    )
-    log = logging.getLogger(log_tag)
-    while process.poll() is None:
-        # 从stdout输出读取内容
-        stdout_line = process.stdout.readline().strip()
-        if stdout_line:
-            log.info(f"{stdout_line}")
-
-        # 从stderr输出读取内容
-        stderr_line = process.stderr.readline().strip()
-        if stderr_line:
-            log.error(f"{stderr_line}")
-
-    # 读取任何剩余的输出
-    remaining_stdout, remaining_stderr = process.communicate()
-
-    if remaining_stdout.strip():
-        log.info(f"{remaining_stdout.strip()}")
-    if remaining_stderr.strip():
-        log.error(f"{remaining_stderr.strip()}")
-    return process.wait()
+        return execute_cmd(cmd, self.logger)
 
 
 class GitAnyCmd(CmdBase):
@@ -367,7 +399,7 @@ class GitAnyCmd(CmdBase):
         """
         :param cmd : any
         """
-        run_cmd_in_repository_dir(self, cmd)
+        return run_cmd_in_repository_dir(self, cmd)
         pass
 
 
@@ -383,7 +415,7 @@ class GitUpdateCmd(CmdBase):
         recursive_str = " --recurse-submodules"
         if ignore_sub:
             recursive_str = ""
-        run_cmd_in_repository_dir(self, f'git pull {recursive_str}')
+        return run_cmd_in_repository_dir(self, f'git pull {recursive_str}')
         pass
 
 
@@ -401,7 +433,7 @@ class GitUpdateCmd(CmdBase):
         cmd = f'git checkout {branch} && git pull '
         if r:
             cmd += f' && git submodule foreach "git checkout {branch} && git pull"'
-        run_cmd_in_repository_dir(self, cmd)
+        return run_cmd_in_repository_dir(self, cmd)
         pass
 
 
@@ -418,7 +450,7 @@ class GitUpdateCmd(CmdBase):
         cmd = f'git status'
         if r:
             cmd += f' && git submodule foreach "git status"'
-        run_cmd_in_repository_dir(self, cmd)
+        return run_cmd_in_repository_dir(self, cmd)
         pass
 
 
