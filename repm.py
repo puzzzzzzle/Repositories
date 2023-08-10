@@ -324,7 +324,9 @@ def create_and_run_cmd(cls, *args, **kwargs):
         jobs = int(global_conf["jobs"])
     logger.info(f"run with jobs {jobs}")
     assert jobs > 0
-    with concurrent.futures.ProcessPoolExecutor(max_workers=jobs) as executor:
+    Pool = concurrent.futures.ThreadPoolExecutor
+    # Pool = concurrent.futures.ProcessPoolExecutor
+    with Pool(max_workers=jobs) as executor:
         tasks = []
         for item in need_exec:
             fu = executor.submit(cmd_execute_worker, item, cls, conf, base_path, *args, **kwargs)
