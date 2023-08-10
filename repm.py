@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# author : puzzzzzzle
+# email : 2359173906@qq.com
+# desc : mng multi git repositories
+
 import concurrent.futures
 import configparser
 import argparse
