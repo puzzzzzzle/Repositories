@@ -259,7 +259,7 @@ def execute_cmd_in_rep_dir(cmd_obj, cmd_str):
     curr_path = cmd_obj.base_path / local_path
     if not (curr_path).exists():
         logger.info(f"project not cloned, ignore {cmd_obj.curr_name} {local_path}")
-        return
+        return 0, [], [], cmd_str
     cmd = f'cd "{curr_path}" && {cmd_str}'
     logger.info(f"will run -- {cmd} --")
     return execute_cmd(cmd, cmd_obj.log)
