@@ -16,13 +16,29 @@ import re
 import subprocess
 import time
 
+
 # ---------- logger ----------
+
+
+def create_cli_log(tag: str, format_str: str):
+    # create logger
+    tmp_log = logging.getLogger(tag)
+    # create cli handle
+    logger_handle = logging.StreamHandler()
+    logger_handle.setLevel(LOG_LEVEL)
+    # set formatter
+    formatter = logging.Formatter(format_str)
+    logger_handle.setFormatter(formatter)
+    # add handle
+    tmp_log.addHandler(logger_handle)
+    return tmp_log
+
+
 LOG_LEVEL = logging.INFO
-CMD_FORMAT = "%(message)s"
-logging.basicConfig(level=LOG_LEVEL,
-                    format='|%(asctime)s|%(name)s|%(levelname)s|%(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=LOG_LEVEL)
+logging.getLogger().handlers.clear()
+logger = create_cli_log("main", '|%(asctime)s|%(name)s|%(levelname)s|%(message)s')
+cmd_logger = create_cli_log("cmd", '%(message)s')
 
 
 # ---------- common cmd mng define ----------
@@ -213,11 +229,11 @@ def find_file_in_parent_dir(start_path, file_name: str):
     return None, None
 
 
-def execute_cmd(cmd: str, log):
+def execute_cmd(cmd: str, force_log=False):
     start_time = time.time()
 
     def long_time_log(log_func, msg):
-        if time.time() - start_time > 3:
+        if force_log or time.time() - start_time > 3:
             log_func(msg)
 
     process = subprocess.Popen(
@@ -233,42 +249,41 @@ def execute_cmd(cmd: str, log):
     while process.poll() is None:
         # 从stdout输出读取内容
         stdout_line = process.stdout.readline()
-        if stdout_line:
-            long_time_log(log.info,stdout_line)
+        if stdout_line is not None:
+            long_time_log(cmd_logger.info, stdout_line)
             stdout_lines.append(stdout_line)
         # 从stderr输出读取内容
         stderr_line = process.stderr.readline()
         if stderr_line:
-            long_time_log(log.error,stdout_line)
+            long_time_log(cmd_logger.error, stdout_line)
             stderr_lines.append(stdout_line)
 
     # 读取任何剩余的输出
     remaining_stdout, remaining_stderr = process.communicate()
 
     if remaining_stdout.strip():
-        long_time_log(log.info, remaining_stderr)
+        long_time_log(cmd_logger.info, remaining_stderr)
         stdout_lines.append(remaining_stderr)
     if remaining_stderr.strip():
-        long_time_log(log.error, remaining_stderr)
+        long_time_log(cmd_logger.error, remaining_stderr)
         stderr_lines.append(remaining_stderr)
     return process.wait(), stdout_lines, stderr_lines, cmd
 
 
-def execute_cmd_in_rep_dir(cmd_obj, cmd_str):
+def execute_cmd_in_rep_dir(cmd_obj, cmd_str, force_log=False):
     local_path = cmd_obj.value("local")
     curr_path = cmd_obj.base_path / local_path
-    if not (curr_path).exists():
+    if not curr_path.exists():
         logger.info(f"project not cloned, ignore {cmd_obj.curr_name} {local_path}")
         return 0, [], [], cmd_str
     cmd = f'cd "{curr_path}" && {cmd_str}'
-    logger.info(f"will run -- {cmd} --")
-    return execute_cmd(cmd, cmd_obj.log)
+    logger.debug(f"will run -- {cmd} --")
+    return execute_cmd(cmd, force_log)
 
 
 def cmd_execute_worker(item, cls, conf, base_path, *args, **kwargs):
     global_conf = conf["__Global__"]
     cmd = cls(global_conf, conf[item], base_path, item)
-    log = cmd.log
     ret, info, err, cmd = cmd.run(*args, **kwargs)
     success = ret == 0
     header = "\n>>>>>>>>>>"
@@ -288,9 +303,9 @@ def cmd_execute_worker(item, cls, conf, base_path, *args, **kwargs):
     body += "<<<<<<<<<<\n"
 
     if success:
-        log.info(header + body)
+        cmd_logger.debug(header + body)
     else:
-        log.error(header + body)
+        cmd_logger.error(header + body)
     return success, item
 
 
@@ -323,14 +338,14 @@ def create_and_run_cmd(cls, *args, **kwargs):
 
     # for item in need_exec:
     #     run_item(item)
-    jobs = multiprocessing.cpu_count()
+    jobs = cls.jobs_num
     if "jobs" in global_conf:
         jobs = int(global_conf["jobs"])
-    logger.info(f"run with jobs {jobs}")
+    cmd_logger.info(f"run with jobs {jobs}")
     assert jobs > 0
-    Pool = concurrent.futures.ThreadPoolExecutor
-    # Pool = concurrent.futures.ProcessPoolExecutor
-    with Pool(max_workers=jobs) as executor:
+    curr_pool = concurrent.futures.ThreadPoolExecutor
+    # curr_pool = concurrent.futures.ProcessPoolExecutor
+    with curr_pool(max_workers=jobs) as executor:
         tasks = []
         for item in need_exec:
             fu = executor.submit(cmd_execute_worker, item, cls, conf, base_path, *args, **kwargs)
@@ -343,16 +358,17 @@ def create_and_run_cmd(cls, *args, **kwargs):
                 success_tasks.append(item)
             else:
                 fail_tasks.append(item)
-        info = f"total:{len(need_exec)} success:{len(success_tasks)} fail:{len(fail_tasks)}"
+        info = f"total:{len(need_exec)} success:{len(success_tasks)} fail:{len(fail_tasks)}:{fail_tasks}"
         if len(fail_tasks) > 0:
             info += f" fail tasks:{fail_tasks}"
-        logger.info(info)
+        cmd_logger.info(info)
 
 
 class CmdBase:
     cmd = "CmdBase"
     description = "CmdBase desc"
     help = description
+    jobs_num = multiprocessing.cpu_count()
 
     @staticmethod
     def run_cmd(cls, *args, **kwargs):
@@ -363,14 +379,6 @@ class CmdBase:
         self.curr_conf = curr_conf
         self.base_path: pathlib.Path = base_path
         self.curr_name = curr_name
-
-        self.log = logging.getLogger(f"{self.__class__.__name__}:{self.curr_name}")
-        module_log_handler = logging.StreamHandler()
-        module_log_format = logging.Formatter(CMD_FORMAT)
-        module_log_handler.setFormatter(module_log_format)
-        self.log.handlers.clear()
-        self.log.addHandler(module_log_handler)
-        self.log.setLevel(LOG_LEVEL)
         pass
 
     def value_or_default(self, key: str, default=None) -> str:
@@ -403,7 +411,7 @@ class TestCmd(CmdBase):
         :param arg1  : arg1 desc str
         :param arg4  : arg4 desc str
         """
-        self.log.info(f"{arg1} {arg2} {arg3} {arg4} {arg5}")
+        cmd_logger.info(f"{arg1} {arg2} {arg3} {arg4} {arg5}")
         return 0, [], [], ""
         pass
 
@@ -416,7 +424,7 @@ class GitCloneCmd(CmdBase):
     def run(self):
         local_path = self.value("local")
         if (self.base_path / local_path).exists():
-            self.log.debug(f"ignore exists {self.curr_name} {local_path}")
+            cmd_logger.debug(f"ignore exists {self.curr_name} {local_path}")
             return 0, [], [], "ignore exists"
         recursive = self.value_or_default("recursive", "true")
         if recursive.strip(' ').upper() == 'TRUE':
@@ -427,8 +435,7 @@ class GitCloneCmd(CmdBase):
         remote_path = self.value("remote")
 
         cmd = f'cd {self.base_path} && git clone {recursive_str} "{remote_path}" "{local_path}" '
-        self.log.debug(f"will run -- {cmd} --")
-        return execute_cmd(cmd, self.log)
+        return execute_cmd(cmd)
 
 
 class GitAnyCmd(CmdBase):
@@ -482,6 +489,7 @@ class GitStatusCmd(CmdBase):
     cmd = "status"
     description = "recursive update repositories in config"
     help = description
+    jobs_num = 1
 
     def run(self, r: bool = False):
         """
@@ -491,11 +499,14 @@ class GitStatusCmd(CmdBase):
         cmd = f'git status'
         if r:
             cmd += f' && git submodule foreach "git status"'
-        return execute_cmd_in_rep_dir(self, cmd)
+        cmd_logger.info(f"----------- git status at {self.curr_name} -----------")
+        ret = execute_cmd_in_rep_dir(self, cmd, True)
+        # cmd_logger.info(f"----------- git status end {self.curr_name} -----------\n")
+        return ret
+
         pass
 
 
 if __name__ == '__main__':
-    logger.debug("============= start =============")
     cmd_main()
     pass
