@@ -37,8 +37,9 @@ def create_cli_log(tag: str, format_str: str):
 LOG_LEVEL = logging.INFO
 logging.basicConfig(level=LOG_LEVEL)
 logging.getLogger().handlers.clear()
-logger = create_cli_log("main", '|%(asctime)s|%(name)s|%(levelname)s|%(message)s')
 cmd_logger = create_cli_log("cmd", '%(message)s')
+# logger = create_cli_log("main", '|%(asctime)s|%(name)s|%(levelname)s|%(message)s')
+logger = cmd_logger
 
 
 # ---------- common cmd mng define ----------
