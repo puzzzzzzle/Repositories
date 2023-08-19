@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author : puzzzzzzle
 # email : 2359173906@qq.com
-# desc : mng multi git repositories
+# desc : mng multi git repositories, only depends on python 3.5+
 
 import concurrent.futures
 import configparser
@@ -505,7 +505,25 @@ class GitStatusCmd(CmdBase):
         # cmd_logger.info(f"----------- git status end {self.curr_name} -----------\n")
         return ret
 
-        pass
+
+class GitConfUserCmd(CmdBase):
+    cmd = "user"
+    description = "set user's name and email"
+    help = description
+
+    def run(self, user_name: str, email: str, r: bool = False):
+        """
+        :param user_name : git user's name
+        :param email : git user's email
+        :param r : recurse submodule
+        """
+        set_one = f'git config user.name {user_name} && git config user.email {email}'
+        cmd = set_one
+        if r:
+            cmd += f' && git submodule foreach "{set_one}"'
+        cmd_logger.info(f"run at {self.curr_name} : {cmd}")
+        ret = execute_cmd_in_rep_dir(self, cmd, True)
+        return ret
 
 
 if __name__ == '__main__':
