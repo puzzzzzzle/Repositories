@@ -63,7 +63,7 @@ def get_param_description(function, para_name):
         return ""
 
 
-def build_args(sub_cmds, cls):
+def build_args(sub_cmds, cls, run_func_name="run"):
     """
     build args for parser by function define
     """
@@ -75,7 +75,7 @@ def build_args(sub_cmds, cls):
     parser = sub_cmds.add_parser(cls.cmd, description=cls.description,
                                  help=cls.help, formatter_class=MyHelpFormatter)
 
-    run_func = getattr(cls, "run")
+    run_func = getattr(cls, run_func_name)
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = inspect.getfullargspec(run_func)
     default_arg_start = len(args)
     if defaults is not None:
