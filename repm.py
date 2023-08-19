@@ -124,9 +124,9 @@ def build_args(sub_cmds, cls):
             if len(arg) == 1:
                 name = f"-{arg}"
             paras = {"type": t, "default": value}
+            help_str = f"{get_param_description(run_func, arg)}"
             if t == bool:
                 del paras["type"]
-                help_str = f"{get_param_description(run_func, arg)}"
                 if value:
                     help_str += f", default is set, add flags to set false"
                     paras["action"] = "store_false"
@@ -136,7 +136,6 @@ def build_args(sub_cmds, cls):
 
                 paras["help"] = help_str
             else:
-                help_str = f"{get_param_description(run_func, arg)}"
                 paras["help"] = help_str
 
             parser.add_argument(name, **paras)
