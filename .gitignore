@@ -1,6 +1,4 @@
-*
-!.gitignore
-!.mrconfig
-!README.md
-!repm.py
-!Repositories.ini
+# Ignore all other folders in root
+/*/
+# exclude my_files
+!/my_files/

@@ -1,0 +1,42 @@
+ 搜狗输入法 不跟随
+https://github.com/RikudouPatrickstar/JetBrainsRuntime-for-Linux-x64
+mv jbr jbr_bak && ln -s /home/tao/Documents/jbr_jcef-17.0.4-x64-b469 jbr
+
+
+v2ray
+v2raya
+
+
+dmesg |grep ata
+[    1.055866] ata1: SATA max UDMA/133 abar m131072@0xfc780000 port 0xfc780100 irq 39
+[    1.055868] ata2: SATA max UDMA/133 abar m131072@0xfc780000 port 0xfc780180 irq 39
+[    1.055870] ata3: SATA max UDMA/133 abar m131072@0xfc780000 port 0xfc780200 irq 39
+[    1.055872] ata4: SATA max UDMA/133 abar m131072@0xfc780000 port 0xfc780280 irq 39
+[    1.055874] ata5: SATA max UDMA/133 abar m131072@0xfc780000 port 0xfc780300 irq 39
+[    1.055875] ata6: SATA max UDMA/133 abar m131072@0xfc780000 port 0xfc780380 irq 39
+[    1.355552] ata1: SATA link down (SStatus 0 SControl 330)
+[    1.670916] ata2: SATA link down (SStatus 0 SControl 330)
+[    2.144666] ata3: SATA link up 6.0 Gbps (SStatus 133 SControl 300)
+[    2.145040] ata3.00: ATA-10: WDC WD40EZAZ-00SF3B0, 80.00A80, max UDMA/133
+[    2.151312] ata3.00: 7814037168 sectors, multi 16: LBA48 NCQ (depth 32), AA
+[    2.151316] ata3.00: Features: NCQ-prio
+[    2.158081] ata3.00: configured for UDMA/133
+[    2.471130] ata4: SATA link down (SStatus 0 SControl 300)
+[    2.783256] ata5: SATA link down (SStatus 0 SControl 330)
+[    3.094841] ata6: SATA link down (SStatus 0 SControl 330)
+
+
+
+vim /etc/default/grub
+libata.force=3.00:disable
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash libata.force=3.00:disable"
+update-grub
+
+
+dmesg
+last -x shutdowm
+journalctl -rb -l
+
+
+
+appimagelauncher
