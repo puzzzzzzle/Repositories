@@ -6,6 +6,7 @@ tags: todo
 ## curr
 - libclang
 - rsync pv 命令
+- gitpython
 
 ## doc
 - ryven (抽离框架)
