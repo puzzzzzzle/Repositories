@@ -8,7 +8,7 @@ tags: todo
 - rsync pv 命令
 - gitpython
 ## c++
-c++ primer
+- c++ primer
 - effective c++
 - more effective c++
 - Effective Modern C++
