@@ -7,7 +7,15 @@ tags: todo
 - libclang
 - rsync pv 命令
 - gitpython
-
+## c++
+c++ primer
+- effective c++
+- more effective c++
+- Effective Modern C++
+- STL源码剖析
+- 深度探索c++ 对象模型
+- c++ templates
+- 现代c++白皮书
 ## doc
 - ryven (抽离框架)
 - zk
