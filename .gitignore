@@ -1,4 +1,14 @@
 # Ignore all other folders in root
-/*/
+*/
 # exclude my_files
-!/my_files/
+!my_files/
+
+# 在.gitignore中，通配符*/匹配了所有的顶级目录，
+# 包括rust。即使后面用!opensource/Repositories.ini试图取消忽略这个文件，但由于git的忽略模式是按顺序处理的，
+# 一旦一个路径被忽略，后续的规则不会重新包含（unignore）它。
+# 为了解决这个问题需要确保取消忽略特定文件的规则在忽略目录的规则之前。
+# 但是，Git 不允许重新包含一个已经被父目录忽略的子目录中的内容。
+# 因此，需要先取消忽略rust目录，在忽略其中的所有文件, 然后再取消忽略其中的Repositories.ini文件。
+!opensource/
+opensource/*
+!opensource/Repositories.ini
