@@ -294,7 +294,6 @@ class GitCmdRunner:
         cmd = cls(global_conf, item, base_path)
         ret, info, err = cmd.run(*args, **kwargs)
         success = (ret == 0)
-        cmd_logger.info(f"end {cmd.name}")
         return success, item
 
 
@@ -358,6 +357,7 @@ class CmdBase:
             return 0, "", f"project not cloned, ignore {self.name}"
         cmd_logger.info(f"run | {self.name} | {cmd_str}")
         status, stdout, stderr = self.repository.git.execute(cmd_str, with_extended_output=True)
+        cmd_logger.info(f"end | {self.name}")
         return status, stdout, stderr
 
     def run(self, *args, **kwargs):
@@ -405,11 +405,11 @@ class GitCloneCmd(CmdBase):
         cmd_logger.info(f"will clone {remote_path} to {local_path}")
         try:
             repo.Repo.clone_from(remote_path, local_path, recursive=recursive)
-            cmd_logger.info(f"done {local_path}")
+            cmd_logger.info(f"end | {self.name}")
             return 0, "", ""
         except Exception as e:
-            cmd_logger.error(f"fail {local_path}")
-            return -1, "", f"clone fail {local_path} {remote_path} {e}"
+            cmd_logger.error(f"fail | {self.name}")
+            return -1, "", f"clone fail {self.name} {local_path} {remote_path} {e}"
 
 
 class GitAnyCmd(CmdBase):
