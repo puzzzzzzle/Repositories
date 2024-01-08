@@ -6,6 +6,7 @@
 import concurrent.futures
 import configparser
 import argparse
+import copy
 import inspect
 import logging
 import functools
@@ -13,6 +14,8 @@ import multiprocessing
 import os
 import pathlib
 import re
+
+import yaml
 from git import repo
 
 
@@ -39,6 +42,27 @@ logging.getLogger().handlers.clear()
 cmd_logger = create_cli_log("cmd", '%(message)s')
 # logger = create_cli_log("main", '|%(asctime)s|%(name)s|%(levelname)s|%(message)s')
 logger = cmd_logger
+
+
+def find_file_in_parent_dir(start_path, file_name: str):
+    """
+    find file in curr or parent dir, return relative path
+    """
+    start_path = pathlib.Path(start_path).absolute()
+    path = start_path
+    assert path.is_dir()
+    while True:
+        logger.debug(f"find {path} {file_name}")
+        f = path / file_name
+        if f.exists() and f.is_file():
+            result = start_path.relative_to(path)
+            logger.debug(f"success find at {path} {result}")
+            return result, path
+        if path.parent == path:
+            logger.debug(f"end find {path}")
+            break
+        path = path.parent.absolute()
+    return None, None
 
 
 # ---------- common cmd mng define ----------
@@ -211,68 +235,46 @@ class GitCmdRunner:
         curr_path = os.getcwd()
         curr_path = pathlib.Path(curr_path).absolute()
         # find config file
-        relative_path, base_path = GitCmdRunner.find_file_in_parent_dir(curr_path, GitCmdRunner.CONFIG_FILE_NAME)
+        relative_path, base_path = find_file_in_parent_dir(curr_path, GitCmdRunner.CONFIG_FILE_NAME)
         assert relative_path is not None
         self.relative_path = relative_path
         self.base_path = base_path
         self.current_path = curr_path
 
-    @staticmethod
-    def find_file_in_parent_dir(start_path, file_name: str):
-        """
-        find file in curr or parent dir, return relative path
-        """
-        start_path = pathlib.Path(start_path).absolute()
-        path = start_path
-        assert path.is_dir()
-        while True:
-            logger.debug(f"find {path} {file_name}")
-            f = path / file_name
-            if f.exists() and f.is_file():
-                result = start_path.relative_to(path)
-                logger.debug(f"success find at {path} {result}")
-                return result, path
-            if path.parent == path:
-                logger.debug(f"end find {path}")
-                break
-            path = path.parent.absolute()
-        return None, None
-
     def create_and_run_cmd(self, cls, *args, **kwargs):
         base_path = self.base_path
-        curr_path = self.current_path
         # load config file
-        conf = configparser.ConfigParser()
-        assert len(conf.read((base_path / self.CONFIG_FILE_NAME).absolute())) == 1
+        with open((base_path / self.CONFIG_FILE_NAME)) as f:
+            conf: dict = yaml.load(f, yaml.FullLoader)
+
+        global_conf = conf["global_config"] or {}
+        jobs = global_conf.get("jobs", cls.jobs_num)
+        assert jobs > 0
+        cmd_logger.info(f"run with jobs {jobs}")
+        all_repos = conf["all_repos"] or {}
 
         # select needs
         need_exec = []
-        for item in conf.sections():
-            if item.title() == "__Global__":
-                continue
-            local_path = (base_path / conf[item]["local"]).absolute()
-            if local_path == curr_path or local_path.is_relative_to(curr_path):
-                logger.debug(f"add to exec {local_path}")
-                need_exec.append(item)
+        for category_name, category_repos in all_repos.items():
+            if category_name == "__root__":
+                sub_path = ""
             else:
-                logger.debug(f"ignore {local_path}")
+                sub_path = "category_name/"
+            logger.debug(f"{category_name}")
+            for repo_name, repo_conf in category_repos.items():
+                repo_conf = copy.deepcopy(repo_conf)
+                local_dir = sub_path + (repo_conf["local"] or repo_name)
+                repo_conf["local"] = local_dir
+                repo_conf["name"] = repo_name
+                need_exec.append(repo_conf)
+                pass
 
-        # execute
-        global_conf = conf["__Global__"]
-
-        # for item in need_exec:
-        #     run_item(item)
-        jobs = cls.jobs_num
-        if "jobs" in global_conf:
-            jobs = int(global_conf["jobs"])
-        cmd_logger.info(f"run with jobs {jobs}")
-        assert jobs > 0
         curr_pool = concurrent.futures.ThreadPoolExecutor
-        # curr_pool = concurrent.futures.ProcessPoolExecutor
         with curr_pool(max_workers=jobs) as executor:
             tasks = []
             for item in need_exec:
-                fu = executor.submit(GitCmdRunner.cmd_execute_worker, item, cls, conf, base_path, *args, **kwargs)
+                fu = executor.submit(GitCmdRunner.cmd_execute_worker, item, cls, global_conf, base_path, *args,
+                                     **kwargs)
                 tasks.append(fu)
             success_tasks = []
             fail_tasks = []
@@ -287,8 +289,7 @@ class GitCmdRunner:
                 info += f" fail tasks:{fail_tasks}"
             cmd_logger.info(info)
 
-    @staticmethod
-    def execute_cmd(run_path: str, cmd: str):
+    def execute_cmd(self, run_path: str, cmd: str):
         curr_repo = repo.Repo(run_path)
         status, stdout, stderr = curr_repo.git.execute(cmd, with_extended_output=True)
         if status != 0:
@@ -300,13 +301,13 @@ class GitCmdRunner:
         curr_path = cmd_obj.base_path / local_path
         if not curr_path.exists():
             logger.info(f"project not cloned, ignore {cmd_obj.curr_name} {local_path}")
-            return 0, [], [], cmd_str
+            return 0, "", ""
         logger.debug(f"will run -- {cmd_str} --")
         return self.execute_cmd(local_path, cmd_str)
 
-    def cmd_execute_worker(item, cls, conf, base_path, *args, **kwargs):
-        global_conf = conf["__Global__"]
-        cmd = cls(global_conf, conf[item], base_path, item)
+    @staticmethod
+    def cmd_execute_worker(item, cls, global_conf, base_path, *args, **kwargs):
+        cmd = cls(global_conf, item, base_path, item["name"])
         ret, info, err = cmd.run(*args, **kwargs)
         success = (ret == 0)
         return success, item
@@ -348,7 +349,7 @@ class CmdBase:
         raise KeyError(f"key {key} not exists")
 
     def run(self, *args, **kwargs):
-        return 0, [], [], ""
+        return 0, "", ""
 
 
 # ---------- repositories mng  ----------
@@ -364,7 +365,7 @@ class TestCmd(CmdBase):
         :param arg4  : arg4 desc str
         """
         cmd_logger.info(f"{arg1} {arg2} {arg3} {arg4} {arg5}")
-        return 0, [], [], ""
+        return 0, "", ""
         pass
 
 
@@ -377,17 +378,17 @@ class GitCloneCmd(CmdBase):
         local_path = self.value("local")
         if (self.base_path / local_path).exists():
             cmd_logger.debug(f"ignore exists {self.curr_name} {local_path}")
-            return 0, [], [], "ignore exists"
-        recursive = self.value_or_default("recursive", "true")
-        if recursive.strip(' ').upper() == 'TRUE':
-            recursive_str = " --recursive "
-        else:
-            recursive_str = ""
-
+            return 0, "", "ignore exists"
+        recursive = self.value_or_default("recursive", True)
         remote_path = self.value("remote")
-
-        cmd = f'cd {self.base_path} && git clone {recursive_str} "{remote_path}" "{local_path}" '
-        return runner.execute_cmd(self.base_path.as_posix(), cmd)
+        cmd_logger.info(f"will clone {remote_path} to {local_path}")
+        try:
+            repo.Repo.clone_from(remote_path, local_path, recursive=recursive)
+            cmd_logger.info(f"done {local_path}")
+            return 0, "", ""
+        except Exception as e:
+            cmd_logger.error(f"fail {local_path}")
+            return -1, "", f"clone fail {local_path} {remote_path} {e}"
 
 
 class GitAnyCmd(CmdBase):
