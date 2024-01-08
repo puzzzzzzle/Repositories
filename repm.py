@@ -291,7 +291,7 @@ class GitCmdRunner:
 
     @staticmethod
     def cmd_execute_worker(item, cls, global_conf, base_path, *args, **kwargs):
-        cmd = cls(global_conf, item, base_path, item["name"])
+        cmd = cls(global_conf, item, base_path)
         ret, info, err = cmd.run(*args, **kwargs)
         success = (ret == 0)
         return success, item
@@ -310,13 +310,16 @@ class CmdBase:
     def run_cmd(cls, *args, **kwargs):
         return runner.create_and_run_cmd(cls, *args, **kwargs)
 
-    def __init__(self, global_conf, curr_conf, base_path, curr_name):
+    def __init__(self, global_conf, curr_conf, base_path):
         self.global_conf = global_conf
         self.curr_conf = curr_conf
         self.base_path: pathlib.Path = base_path
-        self.curr_name = curr_name
         self.curr_repo = None
         pass
+
+    @property
+    def name(self):
+        return self.curr_conf["name"]
 
     def value_or_default(self, key: str, default=None) -> str:
         if key in self.curr_conf:
@@ -339,7 +342,7 @@ class CmdBase:
         local_path = self.value("local")
         curr_path = self.base_path / local_path
         if not curr_path.exists():
-            logger.info(f"project not cloned, ignore {self.curr_name} {local_path}")
+            logger.info(f"project not cloned, ignore {self.name} {local_path}")
             return None
 
         self.curr_repo = repo.Repo(self.value("local"))
@@ -347,7 +350,7 @@ class CmdBase:
 
     def execute_cmd_in_rep_dir(self, cmd_str):
         if self.repository is None:
-            return 0, "", f"project not cloned, ignore {self.curr_name}"
+            return 0, "", f"project not cloned, ignore {self.name}"
         status, stdout, stderr = self.repository.git.execute(cmd_str, with_extended_output=True)
         return status, stdout, stderr
 
@@ -380,7 +383,7 @@ class GitCloneCmd(CmdBase):
     def run(self):
         local_path = self.value("local")
         if (self.base_path / local_path).exists():
-            cmd_logger.debug(f"ignore exists {self.curr_name} {local_path}")
+            cmd_logger.debug(f"ignore exists {self.name} {local_path}")
             return 0, "", "ignore exists"
         recursive = self.value_or_default("recursive", True)
         remote_path = self.value("remote")
@@ -403,6 +406,7 @@ class GitAnyCmd(CmdBase):
         """
         :param cmd : any
         """
+        cmd_logger.info(f"running {cmd} as {self.name}")
         return self.execute_cmd_in_rep_dir(cmd)
 
 
@@ -454,7 +458,7 @@ class GitStatusCmd(CmdBase):
             cmd += f' && git submodule foreach "git status"'
         status, stdout, stderr = self.execute_cmd_in_rep_dir(cmd)
         assert status == 0
-        logger.info(f"status at {self.curr_name}\n{stdout}\n{stderr}")
+        logger.info(f"status at {self.name}\n{stdout}\n{stderr}")
         return status, stdout, stderr
 
 
@@ -473,7 +477,7 @@ class GitConfUserCmd(CmdBase):
         cmd = set_one
         if r:
             cmd += f' && git submodule foreach "{set_one}"'
-        cmd_logger.info(f"run at {self.curr_name} : {cmd}")
+        cmd_logger.info(f"run at {self.name} : {cmd}")
         ret = self.execute_cmd_in_rep_dir(cmd)
         return ret
 
