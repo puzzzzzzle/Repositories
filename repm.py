@@ -4,7 +4,6 @@
 # desc : mng multi git repositories, only depends on python 3.5+
 
 import concurrent.futures
-import configparser
 import argparse
 import copy
 import inspect
@@ -247,7 +246,7 @@ class GitCmdRunner:
         with open((base_path / self.CONFIG_FILE_NAME)) as f:
             conf: dict = yaml.load(f, yaml.FullLoader)
 
-        global_conf = conf["global_config"] or {}
+        global_conf = conf.get("global_config", {}) or {}
         jobs = global_conf.get("jobs", cls.jobs_num)
         assert jobs > 0
         cmd_logger.info(f"run with jobs {jobs}")
@@ -259,13 +258,14 @@ class GitCmdRunner:
             if category_name == "__root__":
                 sub_path = ""
             else:
-                sub_path = "category_name/"
+                sub_path = f"{category_name}/"
             logger.debug(f"{category_name}")
             for repo_name, repo_conf in category_repos.items():
                 repo_conf = copy.deepcopy(repo_conf)
-                local_dir = sub_path + (repo_conf["local"] or repo_name)
+                local_dir = sub_path + (repo_conf.get("local", repo_name))
                 repo_conf["local"] = local_dir
                 repo_conf["name"] = repo_name
+                repo_conf["category"] = category_name
                 need_exec.append(repo_conf)
                 pass
 
@@ -321,6 +321,10 @@ class CmdBase:
     @property
     def name(self):
         return self.curr_conf["name"]
+
+    @property
+    def category(self):
+        return self.curr_conf["category"]
 
     def value_or_default(self, key: str, default=None) -> str:
         if key in self.curr_conf:
@@ -381,7 +385,17 @@ class GitCloneCmd(CmdBase):
     description = "clone repositories in config"
     help = description
 
-    def run(self):
+    def run(self, category: str = "", project: str = ""):
+        """
+        :param category: only clone repos in repository category
+        :param project: only clone repos with project name
+        """
+        if category != "" and self.category != category:
+            cmd_logger.info(f"ignore by category filter {category} != {self.category}")
+            return 0, "", ""
+        if project != "" and self.name != project:
+            cmd_logger.info(f"ignore by project filter {project} != {self.name}")
+            return 0, "", ""
         local_path = self.value("local")
         if (self.base_path / local_path).exists():
             cmd_logger.debug(f"ignore exists {self.name} {local_path}")
