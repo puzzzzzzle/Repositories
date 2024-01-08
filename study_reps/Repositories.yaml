@@ -1,0 +1,40 @@
+study_proj:
+  GoStudy:
+    local: GoStudy
+    remote: https://github.com/puzzzzzzle/GoStudy.git
+  JavaStudy:
+    local: JavaStudy
+    remote: https://github.com/puzzzzzzle/JavaStudy.git
+  JavaToolsStudy:
+    local: JavaToolsStudy
+    remote: https://github.com/puzzzzzzle/JavaToolsStudy.git
+  blog_code:
+    local: blog_code
+    remote: https://github.com/puzzzzzzle/blog_code.git
+  cpp_header_tools:
+    local: cpp_header_tools
+    remote: https://github.com/puzzzzzzle/cpp_header_tools.git
+  cpp_study:
+    local: cpp_study
+    remote: https://github.com/puzzzzzzle/cpp_study.git
+  js_study:
+    local: js_study
+    remote: https://github.com/puzzzzzzle/js_study.git
+  lua_study:
+    local: lua_study
+    remote: https://github.com/puzzzzzzle/lua_study.git
+  openai_study:
+    local: openai_study
+    remote: https://github.com/puzzzzzzle/openai_study.git
+  python_study:
+    local: python_study
+    remote: https://github.com/puzzzzzzle/python_study.git
+  rust_study:
+    local: rust_study
+    remote: https://github.com/puzzzzzzle/rust_study.git
+  spring-cloud-study:
+    local: spring-cloud-study
+    remote: https://github.com/puzzzzzzle/spring-cloud-study.git
+  tauri_study:
+    local: tauri_study
+    remote: https://github.com/puzzzzzzle/tauri_study.git

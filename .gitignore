@@ -13,7 +13,10 @@
 !opensource/
 opensource/*
 !opensource/Repositories.ini
+!opensource/Repositories.yaml
 
 !study_reps/
 study_reps/*
 !study_reps/Repositories.ini
+!study_reps/Repositories.yaml
+

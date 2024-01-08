@@ -13,8 +13,6 @@ import multiprocessing
 import os
 import pathlib
 import re
-import subprocess
-import time
 from git import repo
 
 
@@ -207,7 +205,7 @@ multi git repositories mng
 
 # ---------- repositories mng base define ----------
 class GitCmdRunner:
-    CONFIG_FILE_NAME = "Repositories.ini"
+    CONFIG_FILE_NAME = "Repositories.yaml"
 
     def __init__(self):
         curr_path = os.getcwd()
@@ -475,7 +473,7 @@ class GitConfUserCmd(CmdBase):
         if r:
             cmd += f' && git submodule foreach "{set_one}"'
         cmd_logger.info(f"run at {self.curr_name} : {cmd}")
-        ret = runner.execute_cmd_in_rep_dir(self, cmd, True)
+        ret = runner.execute_cmd_in_rep_dir(self, cmd)
         return ret
 
 
