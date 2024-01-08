@@ -292,10 +292,9 @@ class GitCmdRunner:
     @staticmethod
     def cmd_execute_worker(item, cls, global_conf, base_path, *args, **kwargs):
         cmd = cls(global_conf, item, base_path)
-        cmd_logger.info(f"run {cmd.name}")
         ret, info, err = cmd.run(*args, **kwargs)
-        cmd_logger.info(f"end {cmd.name}")
         success = (ret == 0)
+        cmd_logger.info(f"end {cmd.name}")
         return success, item
 
 
@@ -353,6 +352,7 @@ class CmdBase:
     def execute_cmd_in_rep_dir(self, cmd_str):
         if self.repository is None:
             return 0, "", f"project not cloned, ignore {self.name}"
+        cmd_logger.info(f"run | {self.name} | {cmd_str}")
         status, stdout, stderr = self.repository.git.execute(cmd_str, with_extended_output=True)
         return status, stdout, stderr
 
@@ -374,7 +374,6 @@ class TestCmd(CmdBase):
         """
         cmd_logger.info(f"{arg1} {arg2} {arg3} {arg4} {arg5}")
         return 0, "", ""
-        pass
 
 
 class GitCloneCmd(CmdBase):
@@ -479,7 +478,6 @@ class GitConfUserCmd(CmdBase):
         cmd = set_one
         if r:
             cmd += f' && git submodule foreach "{set_one}"'
-        cmd_logger.info(f"run at {self.name} : {cmd}")
         ret = self.execute_cmd_in_rep_dir(cmd)
         return ret
 
