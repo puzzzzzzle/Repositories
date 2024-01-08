@@ -13,3 +13,7 @@
 !opensource/
 opensource/*
 !opensource/Repositories.ini
+
+!study_reps/
+study_reps/*
+!study_reps/Repositories.ini
