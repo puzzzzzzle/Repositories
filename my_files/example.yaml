@@ -1,0 +1,80 @@
+__GLOBAL__:
+
+# 算法
+algorithm:
+  TheAlgorithms_C:
+    remote: https://github.com/TheAlgorithms/C.git
+  TheAlgorithms_C-Plus-Plus:
+    remote: https://github.com/TheAlgorithms/C-Plus-Plus.git
+  TheAlgorithms_Java:
+    remote: https://github.com/TheAlgorithms/Java.git
+
+
+# c++
+cpp:
+  boost:
+    remote: https://github.com/boostorg/boost.git
+  entt:
+    remote: https://github.com/skypjack/entt.git
+  fcgi2:
+    remote: https://repo.or.cz/fcgi2.git
+  tcmalloc:
+    remote: https://github.com/google/tcmalloc.git
+
+
+# java 
+java:
+  jdk:
+    remote: https://github.com/openjdk/jdk.git
+
+
+# rust
+rust:
+  rust-by-example-cn:
+    remote: https://github.com/rust-lang-cn/rust-by-example-cn.git
+  rust-by-practice:
+    remote: https://github.com/sunface/rust-by-practice.git
+  rust-course:
+    remote: https://github.com/sunface/rust-course.git
+
+
+
+# Python
+python:
+  cpython:
+    remote: https://github.com/python/cpython.git
+
+
+# 寻路算法
+path_finding:
+  PathPlanning:
+    remote: https://github.com/zhm-real/PathPlanning.git
+  TheAlgorithms_Python:
+    remote: https://github.com/TheAlgorithms/Python.git
+  pathfinding:
+    remote: https://bitbucket.org/dharabor/pathfinding/src/master/
+  recastnavigation:
+    remote: https://github.com/recastnavigation/recastnavigation.git
+
+# 服务框架
+server_framework:
+  grpc:
+    remote: https://github.com/grpc/grpc
+
+
+# 游戏引擎
+game_engine:
+  UnrealEngine:
+    remote: https://github.com/EpicGames/UnrealEngine.git
+  kbengine:
+    remote: https://github.com/kbengine/kbengine.git
+  skynet:
+    remote: https://github.com/cloudwu/skynet.git
+
+
+# git
+git:
+  git:
+    remote: https://github.com/git/git.git
+  git-lfs:
+    remote: https://github.com/git-lfs/git-lfs.git

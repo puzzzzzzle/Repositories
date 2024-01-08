@@ -2,6 +2,7 @@
 */
 # exclude my_files
 !my_files/
+!my_files/**
 
 # 在.gitignore中，通配符*/匹配了所有的顶级目录，
 # 包括rust。即使后面用!opensource/Repositories.ini试图取消忽略这个文件，但由于git的忽略模式是按顺序处理的，

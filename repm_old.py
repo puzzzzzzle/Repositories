@@ -15,7 +15,6 @@ import pathlib
 import re
 import subprocess
 import time
-from git import repo
 
 
 # ---------- logger ----------
@@ -181,6 +180,10 @@ def run_cmd(cls, para):
     pass
 
 
+# ---------- repositories mng base define ----------
+CONFIG_FILE_NAME = "Repositories.ini"
+
+
 def cmd_main(args=None):
     """
     main args builder
@@ -205,116 +208,160 @@ multi git repositories mng
     args.func(args)
 
 
-# ---------- repositories mng base define ----------
-class GitCmdRunner:
-    CONFIG_FILE_NAME = "Repositories.ini"
+def find_file_in_parent_dir(start_path, file_name: str):
+    """
+    find file in curr or parent dir, return relative path
+    """
+    start_path = pathlib.Path(start_path).absolute()
+    path = start_path
+    assert path.is_dir()
+    while True:
+        logger.debug(f"find {path} {file_name}")
+        f = path / file_name
+        if f.exists() and f.is_file():
+            result = start_path.relative_to(path)
+            logger.debug(f"success find at {path} {result}")
+            return result, path
+        if path.parent == path:
+            logger.debug(f"end find {path}")
+            break
+        path = path.parent.absolute()
+    return None, None
 
-    def __init__(self):
-        curr_path = os.getcwd()
-        curr_path = pathlib.Path(curr_path).absolute()
-        # find config file
-        relative_path, base_path = GitCmdRunner.find_file_in_parent_dir(curr_path, GitCmdRunner.CONFIG_FILE_NAME)
-        assert relative_path is not None
-        self.relative_path = relative_path
-        self.base_path = base_path
-        self.current_path = curr_path
 
-    @staticmethod
-    def find_file_in_parent_dir(start_path, file_name: str):
-        """
-        find file in curr or parent dir, return relative path
-        """
-        start_path = pathlib.Path(start_path).absolute()
-        path = start_path
-        assert path.is_dir()
-        while True:
-            logger.debug(f"find {path} {file_name}")
-            f = path / file_name
-            if f.exists() and f.is_file():
-                result = start_path.relative_to(path)
-                logger.debug(f"success find at {path} {result}")
-                return result, path
-            if path.parent == path:
-                logger.debug(f"end find {path}")
-                break
-            path = path.parent.absolute()
-        return None, None
+def execute_cmd(cmd: str, force_log=False):
+    start_time = time.time()
 
-    def create_and_run_cmd(self, cls, *args, **kwargs):
-        base_path = self.base_path
-        curr_path = self.current_path
-        # load config file
-        conf = configparser.ConfigParser()
-        assert len(conf.read((base_path / self.CONFIG_FILE_NAME).absolute())) == 1
+    def long_time_log(log_func, msg):
+        if force_log or time.time() - start_time > 3:
+            log_func(msg)
 
-        # select needs
-        need_exec = []
-        for item in conf.sections():
-            if item.title() == "__Global__":
-                continue
-            local_path = (base_path / conf[item]["local"]).absolute()
-            if local_path == curr_path or local_path.is_relative_to(curr_path):
-                logger.debug(f"add to exec {local_path}")
-                need_exec.append(item)
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True,
+        text=True,
+        bufsize=1
+    )
+    stdout_lines = []
+    stderr_lines = []
+    while process.poll() is None:
+        # 从stdout输出读取内容
+        stdout_line = process.stdout.readline()
+        if stdout_line is not None:
+            long_time_log(cmd_logger.info, stdout_line)
+            stdout_lines.append(stdout_line)
+        # 从stderr输出读取内容
+        stderr_line = process.stderr.readline()
+        if stderr_line:
+            long_time_log(cmd_logger.error, stdout_line)
+            stderr_lines.append(stdout_line)
+
+    # 读取任何剩余的输出
+    remaining_stdout, remaining_stderr = process.communicate()
+
+    if remaining_stdout.strip():
+        long_time_log(cmd_logger.info, remaining_stderr)
+        stdout_lines.append(remaining_stderr)
+    if remaining_stderr.strip():
+        long_time_log(cmd_logger.error, remaining_stderr)
+        stderr_lines.append(remaining_stderr)
+    return process.wait(), stdout_lines, stderr_lines, cmd
+
+
+def execute_cmd_in_rep_dir(cmd_obj, cmd_str, force_log=False):
+    local_path = cmd_obj.value("local")
+    curr_path = cmd_obj.base_path / local_path
+    if not curr_path.exists():
+        logger.info(f"project not cloned, ignore {cmd_obj.curr_name} {local_path}")
+        return 0, [], [], cmd_str
+    cmd = f'cd "{curr_path}" && {cmd_str}'
+    logger.debug(f"will run -- {cmd} --")
+    return execute_cmd(cmd, force_log)
+
+
+def cmd_execute_worker(item, cls, conf, base_path, *args, **kwargs):
+    global_conf = conf["__Global__"]
+    cmd = cls(global_conf, conf[item], base_path, item)
+    ret, info, err, cmd = cmd.run(*args, **kwargs)
+    success = ret == 0
+    header = "\n>>>>>>>>>>"
+    if success:
+        header += f"run success at {item}:"
+    else:
+        header += f"run fail at {item}:"
+    body = ""
+    if True or not success:
+        body += f'\ncmd:{cmd}\n'
+        for line in info:
+            body += line
+    if len(err) > 0:
+        body += "err info:\n"
+        for line in err:
+            body += line
+    body += "<<<<<<<<<<\n"
+
+    if success:
+        cmd_logger.debug(header + body)
+    else:
+        cmd_logger.error(header + body)
+    return success, item
+
+
+def create_and_run_cmd(cls, *args, **kwargs):
+    curr_path = os.getcwd()
+    curr_path = pathlib.Path(curr_path).absolute()
+
+    # find config file
+    relative_path, base_path = find_file_in_parent_dir(curr_path, CONFIG_FILE_NAME)
+    assert relative_path is not None
+
+    # load config file
+    conf = configparser.ConfigParser()
+    assert len(conf.read((base_path / CONFIG_FILE_NAME).absolute())) == 1
+
+    # select needs
+    need_exec = []
+    for item in conf.sections():
+        if item.title() == "__Global__":
+            continue
+        local_path = (base_path / conf[item]["local"]).absolute()
+        if local_path == curr_path or local_path.is_relative_to(curr_path):
+            logger.debug(f"add to exec {local_path}")
+            need_exec.append(item)
+        else:
+            logger.debug(f"ignore {local_path}")
+
+    # execute
+    global_conf = conf["__Global__"]
+
+    # for item in need_exec:
+    #     run_item(item)
+    jobs = cls.jobs_num
+    if "jobs" in global_conf:
+        jobs = int(global_conf["jobs"])
+    cmd_logger.info(f"run with jobs {jobs}")
+    assert jobs > 0
+    curr_pool = concurrent.futures.ThreadPoolExecutor
+    # curr_pool = concurrent.futures.ProcessPoolExecutor
+    with curr_pool(max_workers=jobs) as executor:
+        tasks = []
+        for item in need_exec:
+            fu = executor.submit(cmd_execute_worker, item, cls, conf, base_path, *args, **kwargs)
+            tasks.append(fu)
+        success_tasks = []
+        fail_tasks = []
+        for fu in concurrent.futures.as_completed(tasks):
+            success, item = fu.result()
+            if success:
+                success_tasks.append(item)
             else:
-                logger.debug(f"ignore {local_path}")
-
-        # execute
-        global_conf = conf["__Global__"]
-
-        # for item in need_exec:
-        #     run_item(item)
-        jobs = cls.jobs_num
-        if "jobs" in global_conf:
-            jobs = int(global_conf["jobs"])
-        cmd_logger.info(f"run with jobs {jobs}")
-        assert jobs > 0
-        curr_pool = concurrent.futures.ThreadPoolExecutor
-        # curr_pool = concurrent.futures.ProcessPoolExecutor
-        with curr_pool(max_workers=jobs) as executor:
-            tasks = []
-            for item in need_exec:
-                fu = executor.submit(GitCmdRunner.cmd_execute_worker, item, cls, conf, base_path, *args, **kwargs)
-                tasks.append(fu)
-            success_tasks = []
-            fail_tasks = []
-            for fu in concurrent.futures.as_completed(tasks):
-                success, item = fu.result()
-                if success:
-                    success_tasks.append(item)
-                else:
-                    fail_tasks.append(item)
-            info = f"total:{len(need_exec)} success:{len(success_tasks)} fail:{len(fail_tasks)}:{fail_tasks}"
-            if len(fail_tasks) > 0:
-                info += f" fail tasks:{fail_tasks}"
-            cmd_logger.info(info)
-
-    @staticmethod
-    def execute_cmd(run_path: str, cmd: str):
-        curr_repo = repo.Repo(run_path)
-        status, stdout, stderr = curr_repo.git.execute(cmd, with_extended_output=True)
-        if status != 0:
-            logger.warning(f"run fail at {run_path} {cmd} \n{stdout}\n {stderr}")
-        return status, stdout, stderr
-
-    def execute_cmd_in_rep_dir(self, cmd_obj, cmd_str):
-        local_path = cmd_obj.value("local")
-        curr_path = cmd_obj.base_path / local_path
-        if not curr_path.exists():
-            logger.info(f"project not cloned, ignore {cmd_obj.curr_name} {local_path}")
-            return 0, [], [], cmd_str
-        logger.debug(f"will run -- {cmd_str} --")
-        return self.execute_cmd(local_path, cmd_str)
-
-    def cmd_execute_worker(item, cls, conf, base_path, *args, **kwargs):
-        global_conf = conf["__Global__"]
-        cmd = cls(global_conf, conf[item], base_path, item)
-        ret, info, err = cmd.run(*args, **kwargs)
-        success = (ret == 0)
-        return success, item
-
-
-runner = GitCmdRunner()
+                fail_tasks.append(item)
+        info = f"total:{len(need_exec)} success:{len(success_tasks)} fail:{len(fail_tasks)}:{fail_tasks}"
+        if len(fail_tasks) > 0:
+            info += f" fail tasks:{fail_tasks}"
+        cmd_logger.info(info)
 
 
 class CmdBase:
@@ -325,14 +372,13 @@ class CmdBase:
 
     @staticmethod
     def run_cmd(cls, *args, **kwargs):
-        return runner.create_and_run_cmd(cls, *args, **kwargs)
+        return create_and_run_cmd(cls, *args, **kwargs)
 
     def __init__(self, global_conf, curr_conf, base_path, curr_name):
         self.global_conf = global_conf
         self.curr_conf = curr_conf
         self.base_path: pathlib.Path = base_path
         self.curr_name = curr_name
-        self.curr_repo = None
         pass
 
     def value_or_default(self, key: str, default=None) -> str:
@@ -389,7 +435,7 @@ class GitCloneCmd(CmdBase):
         remote_path = self.value("remote")
 
         cmd = f'cd {self.base_path} && git clone {recursive_str} "{remote_path}" "{local_path}" '
-        return runner.execute_cmd(self.base_path.as_posix(), cmd)
+        return execute_cmd(cmd)
 
 
 class GitAnyCmd(CmdBase):
@@ -401,7 +447,7 @@ class GitAnyCmd(CmdBase):
         """
         :param cmd : any
         """
-        return runner.execute_cmd_in_rep_dir(self, cmd)
+        return execute_cmd_in_rep_dir(self, cmd)
         pass
 
 
@@ -417,7 +463,7 @@ class GitUpdateCmd(CmdBase):
         recursive_str = " --recurse-submodules"
         if ignore_sub:
             recursive_str = ""
-        return runner.execute_cmd_in_rep_dir(self, f'git pull {recursive_str}')
+        return execute_cmd_in_rep_dir(self, f'git pull {recursive_str}')
         pass
 
 
@@ -435,7 +481,7 @@ class GitCheckoutCmd(CmdBase):
         cmd = f'git checkout {branch} && git pull '
         if r:
             cmd += f' && git submodule foreach "git checkout {branch} && git pull"'
-        return runner.execute_cmd_in_rep_dir(self, cmd)
+        return execute_cmd_in_rep_dir(self, cmd)
         pass
 
 
@@ -453,10 +499,10 @@ class GitStatusCmd(CmdBase):
         cmd = f'git status'
         if r:
             cmd += f' && git submodule foreach "git status"'
-        status, stdout, stderr = runner.execute_cmd_in_rep_dir(self, cmd)
-        assert status == 0
-        logger.info(f"status at {self.curr_name}\n{stdout}")
-        return status, stdout, stderr
+        cmd_logger.info(f"----------- git status at {self.curr_name} -----------")
+        ret = execute_cmd_in_rep_dir(self, cmd, True)
+        # cmd_logger.info(f"----------- git status end {self.curr_name} -----------\n")
+        return ret
 
 
 class GitConfUserCmd(CmdBase):
@@ -475,7 +521,7 @@ class GitConfUserCmd(CmdBase):
         if r:
             cmd += f' && git submodule foreach "{set_one}"'
         cmd_logger.info(f"run at {self.curr_name} : {cmd}")
-        ret = runner.execute_cmd_in_rep_dir(self, cmd, True)
+        ret = execute_cmd_in_rep_dir(self, cmd, True)
         return ret
 
 
