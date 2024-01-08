@@ -292,7 +292,9 @@ class GitCmdRunner:
     @staticmethod
     def cmd_execute_worker(item, cls, global_conf, base_path, *args, **kwargs):
         cmd = cls(global_conf, item, base_path)
+        cmd_logger.info(f"run {cmd.name}")
         ret, info, err = cmd.run(*args, **kwargs)
+        cmd_logger.info(f"end {cmd.name}")
         success = (ret == 0)
         return success, item
 
