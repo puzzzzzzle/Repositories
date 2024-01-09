@@ -403,7 +403,7 @@ class GitCloneCmd(CmdBase):
             return 0, "", "ignore exists"
         recursive = self.value_or_default("recursive", True)
         remote_path = self.value("remote")
-        cmd_logger.info(f"will clone {remote_path} to {local_path}")
+        cmd_logger.info(f"will clone {remote_path} into {local_path}")
         try:
             repo.Repo.clone_from(remote_path, local_path, recursive=recursive)
             cmd_logger.info(f"end | {self.name}")
