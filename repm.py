@@ -247,8 +247,8 @@ class GitCmdRunner:
         with open((base_path / self.CONFIG_FILE_NAME)) as f:
             conf: dict = yaml.load(f, yaml.FullLoader)
 
-        global_conf = conf.get("global_config", {}) or {}
-        jobs = global_conf.get("jobs", cls.jobs_num)
+        global_conf = conf.get("global_config", None) or {}
+        jobs = global_conf.get("jobs", None) or cls.jobs_num
         assert jobs > 0
         cmd_logger.info(f"run with jobs {jobs}")
         all_repos = conf["all_repos"] or {}
@@ -263,7 +263,7 @@ class GitCmdRunner:
             logger.debug(f"{category_name}")
             for repo_name, repo_conf in category_repos.items():
                 repo_conf = copy.deepcopy(repo_conf)
-                local_dir = sub_path + (repo_conf.get("local", repo_name))
+                local_dir = sub_path + (repo_conf.get("local", None) or repo_name)
                 repo_conf["local"] = local_dir
                 repo_conf["name"] = repo_name
                 repo_conf["category"] = category_name
@@ -319,11 +319,11 @@ class CmdBase:
         pass
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.curr_conf["name"]
 
     @property
-    def category(self):
+    def category(self) -> str:
         return self.curr_conf["category"]
 
     def value_or_default(self, key: str, default=None) -> str:
@@ -341,7 +341,7 @@ class CmdBase:
         raise KeyError(f"key {key} not exists")
 
     @property
-    def repository(self):
+    def repository(self) -> repo.Repo:
         if self.curr_repo is not None:
             return self.curr_repo
         local_path = self.value("local")
