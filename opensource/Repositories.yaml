@@ -19,7 +19,8 @@ all_repos:
       remote: https://repo.or.cz/fcgi2.git
     tcmalloc:
       remote: https://github.com/google/tcmalloc.git
-
+    ttmath:
+      remote: https://gitea.ttmath.org/tomasz.sowa/ttmath.git
 
   game_engine:
     UnrealEngine:
