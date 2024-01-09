@@ -13,6 +13,7 @@ import multiprocessing
 import os
 import pathlib
 import re
+from time import sleep
 
 import yaml
 from git import repo
@@ -346,7 +347,7 @@ class CmdBase:
         local_path = self.value("local")
         curr_path = self.base_path / local_path
         if not curr_path.exists():
-            logger.info(f"project not cloned, ignore {self.name} {local_path}")
+            logger.info(f"project not cloned : {self.name} {local_path}")
             return None
 
         self.curr_repo = repo.Repo(self.value("local"))
@@ -354,7 +355,7 @@ class CmdBase:
 
     def execute_cmd_in_rep_dir(self, cmd_str):
         if self.repository is None:
-            return 0, "", f"project not cloned, ignore {self.name}"
+            return 0, "", f""
         cmd_logger.info(f"run | {self.name} | {cmd_str}")
         status, stdout, stderr = self.repository.git.execute(cmd_str, with_extended_output=True)
         cmd_logger.info(f"end | {self.name}")
@@ -421,7 +422,6 @@ class GitAnyCmd(CmdBase):
         """
         :param cmd : any
         """
-        cmd_logger.info(f"running {cmd} as {self.name}")
         return self.execute_cmd_in_rep_dir(cmd)
 
 
@@ -467,7 +467,8 @@ class GitStatusCmd(CmdBase):
         """
         :param r : recurse submodule
         """
-        #  git -c credential.helper= pull --recurse-submodules --progress origin better_game
+        if self.repository is None:
+            return 0, "", f""
         cmd = f'git status'
         if r:
             cmd += f' && git submodule foreach "git status"'
