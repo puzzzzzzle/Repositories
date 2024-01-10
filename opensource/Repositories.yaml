@@ -79,3 +79,11 @@ all_repos:
   linux_src:
     linux:
       remote: https://git.kernel.org/
+
+  sql:
+    redis:
+      remote: https://github.com/redis/redis.git
+    mongo:
+      remote: https://github.com/mongodb/mongo.git
+    postgres:
+      remote: https://github.com/postgres/postgres.git
