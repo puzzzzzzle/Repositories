@@ -1,5 +1,7 @@
 # repm 批量仓库管理
-- Python3.5+ 没有额外依赖
+- Python3.5+
+  - remp.py 依赖在[requirements.txt](requirements.txt)中
+  - repm_old.py 纯内置库实现, 只依赖git命令, 已经不维护了
 - 具体说明使用-h/--help查看
 ```
 python .\repm.py -h
