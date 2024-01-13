@@ -357,9 +357,20 @@ class CmdBase:
         if self.repository is None:
             return 0, "", f""
         cmd_logger.info(f"run | {self.name} | {cmd_str}")
-        status, stdout, stderr = self.repository.git.execute(cmd_str, with_extended_output=True)
+        cmds = cmd_str.split("&&")
+        all_status = 0
+        all_stdout = ""
+        all_stderr = ""
+        for cmd in cmds:
+            cmd = cmd.strip()
+            all_status, stdout, stderr = self.repository.git.execute(cmd, with_extended_output=True)
+            all_stdout += f"run {cmd} get :\n"
+            all_stdout += f"{stdout}\n"
+            all_stderr += f"{stderr}\n"
+            if all_status != 0:
+                break
         cmd_logger.info(f"end | {self.name}")
-        return status, stdout, stderr
+        return all_status, all_stdout, all_stderr
 
     def run(self, *args, **kwargs):
         return 0, "", ""
@@ -489,7 +500,7 @@ class GitConfUserCmd(CmdBase):
         :param email : git user's email
         :param r : recurse submodule
         """
-        set_one = f'git config user.name {user_name} && git config user.email {email}'
+        set_one = f'git config --local user.name \'{user_name}\' && git config --local user.email \'{email}\''
         cmd = set_one
         if r:
             cmd += f' && git submodule foreach "{set_one}"'
