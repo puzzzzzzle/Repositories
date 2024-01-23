@@ -8,6 +8,10 @@ all_repos:
       remote: https://github.com/TheAlgorithms/C-Plus-Plus.git
     TheAlgorithms_Java:
       remote: https://github.com/TheAlgorithms/Java.git
+    TheAlgorithms_Rust:
+      remote: https://github.com/TheAlgorithms/Rust.git
+    TheAlgorithms_Python:
+      remote: https://github.com/TheAlgorithms/Python.git
 
 
   cpp:
