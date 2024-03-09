@@ -6,7 +6,9 @@ tags: todo
 ## curr
 - libclang
 - rsync pv 命令
-- gitpython
+- kafka 详细学习
+
+
 ## c++
 - c++ primer
 - effective c++
