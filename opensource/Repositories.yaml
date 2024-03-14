@@ -19,6 +19,8 @@ all_repos:
       remote: https://github.com/boostorg/boost.git
     entt:
       remote: https://github.com/skypjack/entt.git
+    entityx:
+      remote: https://github.com/alecthomas/entityx.git
     fcgi2:
       remote: https://repo.or.cz/fcgi2.git
     tcmalloc:

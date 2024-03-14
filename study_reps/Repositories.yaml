@@ -30,3 +30,5 @@ all_repos:
       local: spring-cloud-study
     tauri_study:
       remote: https://github.com/puzzzzzzle/tauri_study.git
+    cmd_builder:
+      remote: https://github.com/puzzzzzzle/cmd_builder.git
