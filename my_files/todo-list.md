@@ -11,10 +11,10 @@ tags: todo
 
 
 ## c++
-- c++ primer
+- [x] c++ primer
 - effective c++
 - more effective c++
-- Effective Modern C++
+- [ ] Effective Modern C++
 - STL源码剖析
 - 深度探索c++ 对象模型
 - c++ templates
