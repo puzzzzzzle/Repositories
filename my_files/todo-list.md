@@ -4,11 +4,12 @@ date: 2022-12-20 16:19:24
 tags: todo
 ---
 ## curr
-- libclang
 - kafka 详细学习
 - ecs 详细学习
 - 复习go语言
-
+- c++ 23 协程
+- rust复习 & 协程
+- [ ] Effective Modern C++
 
 ## c++
 - [x] c++ primer
