@@ -375,6 +375,10 @@ class CmdBase:
     def run(self, *args, **kwargs):
         return 0, "", ""
 
+    def is_dirty(self):
+        if self.repository is not None:
+            return self.repository.is_dirty()
+        return False
 
 # ---------- repositories mng  ----------
 
@@ -451,6 +455,21 @@ class GitUpdateCmd(CmdBase):
         return self.execute_cmd_in_rep_dir(f'git pull {recursive_str}')
 
 
+class GitCommitAllCmd(CmdBase):
+    cmd = "commit_all"
+    description = "commit all change to remote"
+    help = description
+
+    def run(self, m="batch update"):
+        """
+        :param m : commit message
+        """
+        if not self.is_dirty():
+            return 0, "", ""
+        logger.info(f"will commit {self.name}")
+        return self.execute_cmd_in_rep_dir(f'git add . && git commit -m "{m}" && git push')
+
+
 class GitCheckoutCmd(CmdBase):
     cmd = "checkout"
     description = "recursive update repositories in config"
@@ -484,7 +503,7 @@ class GitStatusCmd(CmdBase):
         cmd = f'git status'
         if r:
             cmd += f' && git submodule foreach "git status"'
-        if self.repository is not None and not self.repository.is_dirty():
+        if not self.is_dirty():
             return 0, "", f""
         status, stdout, stderr = self.execute_cmd_in_rep_dir(cmd)
         assert status == 0
