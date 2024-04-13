@@ -474,15 +474,18 @@ class GitStatusCmd(CmdBase):
     help = description
     jobs_num = 1
 
-    def run(self, r: bool = False):
+    def run(self, r: bool = False,q = True):
         """
         :param r : recurse submodule
+        :param q : no change print nothing
         """
         if self.repository is None:
             return 0, "", f""
         cmd = f'git status'
         if r:
             cmd += f' && git submodule foreach "git status"'
+        if self.repository is not None and not self.repository.is_dirty():
+            return 0, "", f""
         status, stdout, stderr = self.execute_cmd_in_rep_dir(cmd)
         assert status == 0
         logger.info(f"status at {self.name}\n{stdout}\n{stderr}")
