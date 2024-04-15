@@ -460,11 +460,12 @@ class GitCommitAllCmd(CmdBase):
     description = "commit all change to remote"
     help = description
 
-    def run(self, m="batch update"):
+    def run(self, m="batch update", f=True):
         """
         :param m : commit message
+        :param f : force commit
         """
-        if not self.is_dirty():
+        if not f and not self.is_dirty():
             return 0, "", ""
         logger.info(f"will commit {self.name}")
         return self.execute_cmd_in_rep_dir(f'git add . && git commit -m "{m}" && git push')
