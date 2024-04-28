@@ -27,7 +27,7 @@ all_repos:
     rust_study:
       remote: https://github.com/puzzzzzzle/rust_study.git
     spring-cloud-study:
-      local: spring-cloud-study
+      remote: https://github.com/puzzzzzzle/spring-cloud-study.git
     tauri_study:
       remote: https://github.com/puzzzzzzle/tauri_study.git
     cmd_builder:
