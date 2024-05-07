@@ -6,7 +6,6 @@ tags: todo
 ## curr
 - kafka 详细学习
 - ecs 详细学习
-- 复习go语言
 - c++ 23 协程
 - rust复习 & 协程
 - [ ] Effective Modern C++
