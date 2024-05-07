@@ -7,19 +7,32 @@
 !.idea
 !.idea/**
 
-# 在.gitignore中，通配符*/匹配了所有的顶级目录，
-# 包括rust。即使后面用!opensource/Repositories.ini试图取消忽略这个文件，但由于git的忽略模式是按顺序处理的，
-# 一旦一个路径被忽略，后续的规则不会重新包含（unignore）它.
-# 为了解决这个问题需要确保取消忽略特定文件的规则在忽略目录的规则之前。
-# 但是，Git 不允许重新包含一个已经被父目录忽略的子目录中的内容。
-# 因此，需要先取消忽略该目录，在忽略其中的所有文件, 然后再取消忽略其中的指定的文件。
+# 同一个文件被多条规则命中的优先级:
+
+# 优先级最高的是明确指定的文件或文件夹路径。例如，/file.txt 会明确匹配根目录下的 file.txt 文件。
+
+# 如果一个文件同时被多条模式匹配，那么 Git 会根据 .gitignore 文件中规则的顺序来决定优先级。在 .gitignore 文件中，越往上的规则优先级越高。例如：
+# *.txt
+# !important.txt
+# 在这个例子中，*.txt 规则会匹配所有 .txt 文件，但是 !important.txt 规则会将 important.txt 文件排除在外。因为 !important.txt 规则的优先级高于 *.txt 规则。
+
+# 如果一个文件被多条模式匹配，但其中有一条是以 "!" 开头的（表示不忽略该文件），那么该文件将不会被忽略。例如：
+# *.txt
+# !important.txt
+# important.txt
+# 在这个例子中，尽管 important.txt 文件同时被 *.txt 和 important.txt 规则匹配，但是 !important.txt 规则会将其排除在外，所以该文件不会被忽略。
+
+# 总之，当一个文件被多条 .gitignore 规则命中时，Git 会根据规则的优先级来决定是否忽略该文件。优先级最高的是明确指定的文件或文件夹路径，其次是 .gitignore 文件中规则的顺序，最后是 "!" 开头的规则。
+
+# 可以使用 git check-ignore --no-index -v [path] 来调试
+
 !opensource/
+opensource/*
 !opensource/Repositories.ini
 !opensource/Repositories.yaml
-opensource/*
 
 !study_reps/
+study_reps/*
 !study_reps/Repositories.ini
 !study_reps/Repositories.yaml
-study_reps/*
 
