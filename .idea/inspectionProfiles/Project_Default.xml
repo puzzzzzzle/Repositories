@@ -1,0 +1,73 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="49">
+            <item index="0" class="java.lang.String" itemvalue="protobuf" />
+            <item index="1" class="java.lang.String" itemvalue="tzlocal" />
+            <item index="2" class="java.lang.String" itemvalue="waiting" />
+            <item index="3" class="java.lang.String" itemvalue="python-dateutil" />
+            <item index="4" class="java.lang.String" itemvalue="ryven" />
+            <item index="5" class="java.lang.String" itemvalue="ryvencore" />
+            <item index="6" class="java.lang.String" itemvalue="setuptools" />
+            <item index="7" class="java.lang.String" itemvalue="numpy" />
+            <item index="8" class="java.lang.String" itemvalue="requests" />
+            <item index="9" class="java.lang.String" itemvalue="importlib-metadata" />
+            <item index="10" class="java.lang.String" itemvalue="markupsafe" />
+            <item index="11" class="java.lang.String" itemvalue="zipp" />
+            <item index="12" class="java.lang.String" itemvalue="certifi" />
+            <item index="13" class="java.lang.String" itemvalue="apscheduler" />
+            <item index="14" class="java.lang.String" itemvalue="qtpy" />
+            <item index="15" class="java.lang.String" itemvalue="urllib3" />
+            <item index="16" class="java.lang.String" itemvalue="itsdangerous" />
+            <item index="17" class="java.lang.String" itemvalue="pygments" />
+            <item index="18" class="java.lang.String" itemvalue="werkzeug" />
+            <item index="19" class="java.lang.String" itemvalue="six" />
+            <item index="20" class="java.lang.String" itemvalue="aniso8601" />
+            <item index="21" class="java.lang.String" itemvalue="tzdata" />
+            <item index="22" class="java.lang.String" itemvalue="flask-restful" />
+            <item index="23" class="java.lang.String" itemvalue="packaging" />
+            <item index="24" class="java.lang.String" itemvalue="click" />
+            <item index="25" class="java.lang.String" itemvalue="pytz-deprecation-shim" />
+            <item index="26" class="java.lang.String" itemvalue="ryvencore-qt" />
+            <item index="27" class="java.lang.String" itemvalue="jinja2" />
+            <item index="28" class="java.lang.String" itemvalue="pandas" />
+            <item index="29" class="java.lang.String" itemvalue="shiboken2" />
+            <item index="30" class="java.lang.String" itemvalue="colorama" />
+            <item index="31" class="java.lang.String" itemvalue="charset-normalizer" />
+            <item index="32" class="java.lang.String" itemvalue="textdistance" />
+            <item index="33" class="java.lang.String" itemvalue="pycryptodome" />
+            <item index="34" class="java.lang.String" itemvalue="pytz" />
+            <item index="35" class="java.lang.String" itemvalue="flask" />
+            <item index="36" class="java.lang.String" itemvalue="flask-apscheduler" />
+            <item index="37" class="java.lang.String" itemvalue="requests-toolbelt" />
+            <item index="38" class="java.lang.String" itemvalue="scipy" />
+            <item index="39" class="java.lang.String" itemvalue="pyloco" />
+            <item index="40" class="java.lang.String" itemvalue="networkx" />
+            <item index="41" class="java.lang.String" itemvalue="matplot" />
+            <item index="42" class="java.lang.String" itemvalue="opencv-python" />
+            <item index="43" class="java.lang.String" itemvalue="imutils" />
+            <item index="44" class="java.lang.String" itemvalue="pillow" />
+            <item index="45" class="java.lang.String" itemvalue="ushlex" />
+            <item index="46" class="java.lang.String" itemvalue="transitions" />
+            <item index="47" class="java.lang.String" itemvalue="webencodings" />
+            <item index="48" class="java.lang.String" itemvalue="simplewebsocketserver" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N806" />
+          <option value="N802" />
+          <option value="N803" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="TsLint" enabled="true" level="WARNING" enabled_by_default="true" />
+  </profile>
+</component>
