@@ -1,5 +1,5 @@
 global_config:
-#jobs : 1
+jobs : 1
 all_repos:
   __root__:
     GoStudy:
