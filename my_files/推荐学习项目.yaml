@@ -1,0 +1,22 @@
+c++:
+  - Google Test
+  - Boost Libraries
+  - CMake
+  - LLVM/Clang
+  - Qt
+  - POCO C++ Libraries
+  - OpenCV
+  - Apache Thrift
+  - Tesseract OCR
+  - Catch2
+
+c:
+  - Linux Kernel
+  - Git
+  - Redis
+  - SQLite
+  - nginx
+  - OpenSSL
+  - CMake
+  - Apache HTTP Server
+  - Curl

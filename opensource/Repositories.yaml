@@ -97,3 +97,7 @@ all_repos:
       remote: https://github.com/sqlite/sqlite.git
     leveldb:
       remote: https://github.com/google/leveldb.git
+
+  lua:
+    lua:
+      remote: https://github.com/lua/lua.git
