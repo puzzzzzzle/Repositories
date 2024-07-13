@@ -13,10 +13,39 @@ import multiprocessing
 import os
 import pathlib
 import re
-from time import sleep
 
 import yaml
 from git import repo
+
+import subprocess
+import platform
+
+
+def run_command(command):
+    """
+    执行一个命令行脚本，并返回其输出和返回值。
+
+    :param command: 要执行的命令行脚本，可以是字符串或列表。
+    :return: (stdout, stderr, returncode) - 标准输出，标准错误，返回值
+    """
+    # 如果 command 是字符串，拆分成列表
+    if isinstance(command, str):
+        command = [x for x in command.split() if x != ""]
+    # 检查当前操作系统
+    # 如果是 Windows 系统，使用 shell=True
+    if platform.system() == "Windows":
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    else:
+        # 对于其他系统（如 Linux），使用 shell=False
+        process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    # 获取标准输出和标准错误
+    stdout, stderr = process.communicate()
+
+    # 获取返回值
+    returncode = process.returncode
+
+    return returncode, stdout, stderr
 
 
 # ---------- logger ----------
@@ -362,8 +391,8 @@ class CmdBase:
         all_stdout = ""
         all_stderr = ""
         for cmd in cmds:
-            cmd = cmd.strip()
-            all_status, stdout, stderr = self.repository.git.execute(cmd, with_extended_output=True)
+            cmd: str = cmd.strip()
+            all_status, stdout, stderr = run_command(cmd)
             all_stdout += f"run {cmd} get :\n"
             all_stdout += f"{stdout}\n"
             all_stderr += f"{stderr}\n"
@@ -379,6 +408,7 @@ class CmdBase:
         if self.repository is not None:
             return self.repository.is_dirty()
         return False
+
 
 # ---------- repositories mng  ----------
 
@@ -494,7 +524,7 @@ class GitStatusCmd(CmdBase):
     help = description
     jobs_num = 1
 
-    def run(self, r: bool = False,q = True):
+    def run(self, r: bool = False, q=True):
         """
         :param r : recurse submodule
         :param q : no change print nothing
